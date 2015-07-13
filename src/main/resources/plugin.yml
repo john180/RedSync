@@ -1,0 +1,5 @@
+name: RedSync
+author: leNic
+version: 1.4
+
+main: de.lenic.redsync.RedSync
