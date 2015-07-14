@@ -10,7 +10,9 @@ public enum DataKey {
     EXP("EXP"),
     HEALTH("HEALTH"),
     HUNGER("HUNGER"),
-    GAMEMODE("GAMEMODE");
+    GAMEMODE("GAMEMODE"),
+    FIRETICKS("FIRETICKS"),
+    SLOT("SLOT");
 
     private final String _strings;
 

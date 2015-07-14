@@ -1,5 +1,6 @@
 package de.lenic.redsync.db;
 
+import com.google.common.base.Stopwatch;
 import de.lenic.redsync.RedSync;
 import de.lenic.redsync.RedSyncConfig;
 import de.lenic.redsync.objects.DataKey;
@@ -13,12 +14,14 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
+import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class RedisDB {
 
@@ -51,7 +54,7 @@ public class RedisDB {
     public void connect(int threads){
         this.plugin.getLogger().info("Connecting to Redis database...");
 
-        final long startTime = System.currentTimeMillis();
+        final Stopwatch stopwatch = Stopwatch.createStarted();
 
         // Configuring pool
         this.cfg = new JedisPoolConfig();
@@ -60,10 +63,10 @@ public class RedisDB {
         this.cfg.setMaxIdle(4);
         this.cfg.setTestOnReturn(true);
 
-        // Connect with auth
+        // Connect with authorization
         if (this.password != null) {
             this.pool = new JedisPool(this.cfg, this.host, this.port, this.timeout, this.password, this.db);
-        // Connect without auth
+        // Connect without authorization
         } else {
             try {
                 this.pool = new JedisPool(new URI("redis://" + this.host + ":" + this.port + '/' + this.db));
@@ -71,11 +74,13 @@ public class RedisDB {
                 e.printStackTrace();
             }
         }
+
         // Test connection
         try (Jedis j = this.pool.getResource()) {
             if (j.isConnected()) {
-                this.plugin.getLogger().info(plugin.getLang().getMessage("connectionSuccess", System.currentTimeMillis() - startTime));
+                this.plugin.getLogger().info(plugin.getLang().getMessage("connectionSuccess", stopwatch.elapsed(TimeUnit.MILLISECONDS)));
                 this.plugin.getLogger().warning(plugin.getLang().getMessage("authWarning"));
+                stopwatch.stop();
             } else {
                 this.plugin.getLogger().warning(plugin.getLang().getMessage("connectionFail"));
                 Bukkit.getPluginManager().disablePlugin(this.plugin);
@@ -111,6 +116,8 @@ public class RedisDB {
                 data.put(DataKey.HEALTH.value(), String.valueOf(p.getHealth()));
                 data.put(DataKey.HUNGER.value(), String.valueOf(p.getFoodLevel()));
                 data.put(DataKey.GAMEMODE.value(), String.valueOf(p.getGameMode().name()));
+                data.put(DataKey.FIRETICKS.value(), String.valueOf(p.getFireTicks()));
+                data.put(DataKey.SLOT.value(), String.valueOf(p.getInventory().getHeldItemSlot()));
             }
             j.hmset("data_" + p.getUniqueId().toString(), data);
         }
@@ -164,6 +171,15 @@ public class RedisDB {
                     // Gamemode
                     if(data.containsKey(DataKey.GAMEMODE.value()))
                         p.setGameMode(GameMode.valueOf(data.get(DataKey.GAMEMODE.value())));
+
+                    // Fire ticks
+                    if(data.containsKey(DataKey.FIRETICKS.value()))
+                        p.setFireTicks(Integer.parseInt(data.get(DataKey.FIRETICKS.value())));
+
+                    // Item slot
+                    if(data.containsKey(DataKey.SLOT.value()))
+                        p.getInventory().setHeldItemSlot(Integer.parseInt(data.get(DataKey.SLOT.value())));
+
                 }
             } catch (IOException e) {
                 e.printStackTrace();
