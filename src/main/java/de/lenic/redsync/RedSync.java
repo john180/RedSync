@@ -1,5 +1,6 @@
 package de.lenic.redsync;
 
+import de.lenic.redsync.api.RedSyncAPI;
 import de.lenic.redsync.db.RedisDB;
 import de.lenic.redsync.listeners.JoinListener;
 import de.lenic.redsync.listeners.LockListener;
@@ -28,6 +29,9 @@ public class RedSync extends JavaPlugin {
 
     // Language manager
     private LangManager langManager = new LangManager("en");
+
+    // API
+    private RedSyncAPI api = new RedSyncAPI(this);
 
 
     // ---------------- [ METHODS ] ---------------- //
@@ -114,6 +118,10 @@ public class RedSync extends JavaPlugin {
 
     public LangManager getLang(){
         return this.langManager;
+    }
+
+    public RedSyncAPI getAPI(){
+        return this.api;
     }
 
 }

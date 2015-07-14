@@ -14,7 +14,6 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
-import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -38,6 +37,7 @@ public class RedisDB {
     private int timeout = 5000;
     private int db = 0;
     private String password;
+
 
     // Contructor
     public RedisDB(RedSync plugin, String host, int port, int timeout, int db, String password){
@@ -188,9 +188,14 @@ public class RedisDB {
     }
 
     // Save all player data
-    public void saveAll(Collection<? extends Player> players){
-        for(Player p : players)
+    public void saveAll(Collection<? extends Player> players) {
+        for (Player p : players)
             savePlayer(p);
+    }
+
+    // Get resource from pool
+    public Jedis getResource(){
+        return this.pool.getResource();
     }
 
 }
