@@ -61,18 +61,8 @@ public class RedisDB {
         this.cfg.setTestOnReturn(true);
 
         // Connect with auth
-        if(this.password != null){
+        if (this.password != null) {
             this.pool = new JedisPool(this.cfg, this.host, this.port, this.timeout, this.password, this.db);
-
-            // Test connection
-            try (Jedis j = this.pool.getResource()){
-                if(j.isConnected())
-                    this.plugin.getLogger().info(plugin.getLang().getMessage("connectionSuccess", System.currentTimeMillis() - startTime));
-                else {
-                    this.plugin.getLogger().warning(plugin.getLang().getMessage("connectionFail"));
-                    Bukkit.getPluginManager().disablePlugin(this.plugin);
-                }
-            }
         // Connect without auth
         } else {
             try {
@@ -80,16 +70,15 @@ public class RedisDB {
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             }
-
-            // Test connection
-            try (Jedis j = this.pool.getResource()) {
-                if (j.isConnected()) {
-                    this.plugin.getLogger().info(plugin.getLang().getMessage("connectionSuccess", System.currentTimeMillis() - startTime));
-                    this.plugin.getLogger().warning(plugin.getLang().getMessage("authWarning"));
-                } else {
-                    this.plugin.getLogger().warning(plugin.getLang().getMessage("connectionFail"));
-                    Bukkit.getPluginManager().disablePlugin(this.plugin);
-                }
+        }
+        // Test connection
+        try (Jedis j = this.pool.getResource()) {
+            if (j.isConnected()) {
+                this.plugin.getLogger().info(plugin.getLang().getMessage("connectionSuccess", System.currentTimeMillis() - startTime));
+                this.plugin.getLogger().warning(plugin.getLang().getMessage("authWarning"));
+            } else {
+                this.plugin.getLogger().warning(plugin.getLang().getMessage("connectionFail"));
+                Bukkit.getPluginManager().disablePlugin(this.plugin);
             }
         }
 
