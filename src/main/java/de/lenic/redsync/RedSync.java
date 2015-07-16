@@ -18,10 +18,10 @@ import java.util.concurrent.Executors;
 
 public class RedSync extends JavaPlugin {
 
-    // Redis Database
+    // Redis database
     private RedisDB db = null;
 
-    // Thread Pool
+    // Thread pool
     private ExecutorService executor = Executors.newCachedThreadPool();
 
     // Metrics
@@ -52,7 +52,7 @@ public class RedSync extends JavaPlugin {
 
     // ---------------- [ REGISTER / LOAD ] ---------------- //
 
-    // Listener registrieren
+    // Register listeners
     private void registerListeners(){
         if(RedSyncConfig.getLockPlayer())
             this.getServer().getPluginManager().registerEvents(new LockListener(), this);
@@ -61,7 +61,7 @@ public class RedSync extends JavaPlugin {
         this.getServer().getPluginManager().registerEvents(new QuitListener(this), this);
     }
 
-    // Config laden
+    // Load config
     private void loadConfig(){
         this.getConfig().addDefault("Redis.Host", "127.0.0.1");
         this.getConfig().addDefault("Redis.Port", 6379);
