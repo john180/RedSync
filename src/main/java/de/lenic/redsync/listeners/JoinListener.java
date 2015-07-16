@@ -21,8 +21,6 @@ public class JoinListener implements Listener {
     public void onJoin(PlayerJoinEvent e){
         final Player p = e.getPlayer();
 
-        System.out.println(p.getGameMode().name());
-
         // Lock player
         p.setMetadata(LockListener.lockedMeta, new FixedMetadataValue(this.plugin, true));
 
