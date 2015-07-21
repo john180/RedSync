@@ -108,7 +108,7 @@ public class RedisDB {
             final Map<String, String> data = new HashMap<>();
             synchronized (this.plugin){
                 data.put(DataKey.INV.value(), Serializer.itemStackArrayToBase64(p.getInventory().getContents()));
-                data.put(DataKey.ARMOR.value(), Serializer.itemStackArrayToBase64(p.getInventory().getContents()));
+                data.put(DataKey.ARMOR.value(), Serializer.itemStackArrayToBase64(p.getInventory().getArmorContents()));
                 data.put(DataKey.ENDERCHEST.value(), Serializer.itemStackArrayToBase64(p.getEnderChest().getContents()));
                 data.put(DataKey.POTION.value(), Serializer.potionEffectsToString(p.getActivePotionEffects()));
                 data.put(DataKey.LEVEL.value(), String.valueOf(p.getLevel()));
@@ -138,16 +138,16 @@ public class RedisDB {
 
             try {
                 synchronized (this.plugin){
-                    final ItemStack[] armor = Serializer.itemStackArrayFromBase64(data.get(DataKey.ARMOR.value()));
-
                     // Inventory
                     p.getInventory().setContents(Serializer.itemStackArrayFromBase64(data.get(DataKey.INV.value())));
 
                     // Armor
-                    ItemStack[] is = new ItemStack[4];
-                    for(int i = 0; i < 4; i++)
-                        is[i] = armor[i];
-                    p.getInventory().setArmorContents(is);
+                    final ItemStack[] armor = Serializer.itemStackArrayFromBase64(data.get(DataKey.ARMOR.value()));
+                    if(armor.length > 4){
+                        p.getInventory().setArmorContents(new ItemStack[4]);
+                    } else {
+                        p.getInventory().setArmorContents(Serializer.itemStackArrayFromBase64(data.get(DataKey.ARMOR.value())));
+                    }
 
                     // Enderchest
                     p.getEnderChest().setContents(Serializer.itemStackArrayFromBase64(data.get(DataKey.ENDERCHEST.value())));

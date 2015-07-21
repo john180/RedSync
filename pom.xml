@@ -6,7 +6,7 @@
 
     <groupId>de.lenic</groupId>
     <artifactId>redsync</artifactId>
-    <version>1.5</version>
+    <version>1.5.1</version>
 
     <repositories>
         <repository>
@@ -21,12 +21,6 @@
     </repositories>
 
     <dependencies>
-        <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>1.8.7-R0.1-SNAPSHOT</version>
-        </dependency>
-
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
