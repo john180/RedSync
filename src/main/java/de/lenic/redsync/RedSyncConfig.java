@@ -14,7 +14,6 @@ public class RedSyncConfig {
     }
 
 
-
     /* LOCK PLAYER */
     private static boolean lockPlayer = true;
 

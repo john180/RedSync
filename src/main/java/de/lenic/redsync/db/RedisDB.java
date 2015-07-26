@@ -115,7 +115,7 @@ public class RedisDB {
                 data.put(DataKey.EXP.value(), String.valueOf(p.getExp()));
                 data.put(DataKey.HEALTH.value(), String.valueOf(p.getHealth()));
                 data.put(DataKey.HUNGER.value(), String.valueOf(p.getFoodLevel()));
-                data.put(DataKey.GAMEMODE.value(), String.valueOf(p.getGameMode().name()));
+                data.put(DataKey.GAMEMODE.value(), p.getGameMode().name());
                 data.put(DataKey.FIRETICKS.value(), String.valueOf(p.getFireTicks()));
                 data.put(DataKey.SLOT.value(), String.valueOf(p.getInventory().getHeldItemSlot()));
             }
@@ -124,7 +124,7 @@ public class RedisDB {
     }
 
     // Load player data
-    public void loadPlayer(Player p){
+    public void loadPlayer(final Player p){
         try (Jedis j = this.pool.getResource()) {
             final Map<String, String> data = j.hgetAll("data_" + p.getUniqueId().toString());
 
@@ -132,55 +132,61 @@ public class RedisDB {
                 return;
 
             // Remove all potion effects
-            for(PotionEffect effect : p.getActivePotionEffects()){
+            for(PotionEffect effect : p.getActivePotionEffects())
                 p.removePotionEffect(effect.getType());
-            }
 
             try {
-                synchronized (this.plugin){
-                    // Inventory
-                    p.getInventory().setContents(Serializer.itemStackArrayFromBase64(data.get(DataKey.INV.value())));
+                final ItemStack[] inv = Serializer.itemStackArrayFromBase64(data.get(DataKey.INV.value()));
+                final ItemStack[] armor = Serializer.itemStackArrayFromBase64(data.get(DataKey.ARMOR.value()));
+                final ItemStack[] enderchest = Serializer.itemStackArrayFromBase64(data.get(DataKey.ENDERCHEST.value()));
+                final Collection<PotionEffect> effects = Serializer.potionEffectsFromString(data.get(DataKey.POTION.value()));
+                final int level = Integer.parseInt(data.get(DataKey.LEVEL.value()));
+                final float exp = Float.parseFloat(data.get(DataKey.EXP.value()));
+                final double health = Double.parseDouble(data.get(DataKey.HEALTH.value()));
+                final int food = Integer.parseInt(data.get(DataKey.HUNGER.value()));
+                final GameMode gamemode = GameMode.valueOf(data.get(DataKey.GAMEMODE.value()));
+                final int fireticks = Integer.parseInt(data.get(DataKey.FIRETICKS.value()));
+                final int slot = Integer.parseInt(data.get(DataKey.SLOT.value()));
 
-                    // Armor
-                    final ItemStack[] armor = Serializer.itemStackArrayFromBase64(data.get(DataKey.ARMOR.value()));
-                    if(armor.length > 4){
-                        p.getInventory().setArmorContents(new ItemStack[4]);
-                    } else {
-                        p.getInventory().setArmorContents(Serializer.itemStackArrayFromBase64(data.get(DataKey.ARMOR.value())));
+                // Apply data
+                plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
+                    @Override
+                    public void run() {
+                        // Inventory
+                        p.getInventory().setContents(inv);
+
+                        // Armor
+                        p.getInventory().setArmorContents(armor);
+
+                        // Enderchest
+                        p.getEnderChest().setContents(enderchest);
+
+                        // Potion effects
+                        for(PotionEffect effect : effects)
+                            p.addPotionEffect(effect);
+
+                        // Level
+                        p.setLevel(level);
+
+                        // EXP
+                        p.setExp(exp);
+
+                        // Health
+                        p.setHealth(health);
+
+                        // Food
+                        p.setFoodLevel(food);
+
+                        // Gamemode
+                        p.setGameMode(gamemode);
+
+                        // Fire ticks
+                        p.setFireTicks(fireticks);
+
+                        // Item slot
+                        p.getInventory().setHeldItemSlot(slot);
                     }
-
-                    // Enderchest
-                    p.getEnderChest().setContents(Serializer.itemStackArrayFromBase64(data.get(DataKey.ENDERCHEST.value())));
-
-                    // Potion effects
-                    for(PotionEffect effect : Serializer.potionEffectsFromString(data.get(DataKey.POTION.value())))
-                        p.addPotionEffect(effect);
-
-                    // Level
-                    p.setLevel(Integer.parseInt(data.get(DataKey.LEVEL.value())));
-
-                    // EXP
-                    p.setExp(Float.parseFloat(data.get(DataKey.EXP.value())));
-
-                    // Health
-                    p.setHealth(Double.parseDouble(data.get(DataKey.HEALTH.value())));
-
-                    // Food
-                    p.setFoodLevel(Integer.parseInt(data.get(DataKey.HUNGER.value())));
-
-                    // Gamemode
-                    if(data.containsKey(DataKey.GAMEMODE.value()))
-                        p.setGameMode(GameMode.valueOf(data.get(DataKey.GAMEMODE.value())));
-
-                    // Fire ticks
-                    if(data.containsKey(DataKey.FIRETICKS.value()))
-                        p.setFireTicks(Integer.parseInt(data.get(DataKey.FIRETICKS.value())));
-
-                    // Item slot
-                    if(data.containsKey(DataKey.SLOT.value()))
-                        p.getInventory().setHeldItemSlot(Integer.parseInt(data.get(DataKey.SLOT.value())));
-
-                }
+                });
             } catch (IOException e) {
                 e.printStackTrace();
             }
