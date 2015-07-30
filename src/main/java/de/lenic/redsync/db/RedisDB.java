@@ -1,6 +1,5 @@
 package de.lenic.redsync.db;
 
-import com.google.common.base.Stopwatch;
 import de.lenic.redsync.RedSync;
 import de.lenic.redsync.RedSyncConfig;
 import de.lenic.redsync.objects.DataKey;
@@ -20,7 +19,6 @@ import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class RedisDB {
 
@@ -54,7 +52,7 @@ public class RedisDB {
     public void connect(int threads){
         this.plugin.getLogger().info("Connecting to Redis database...");
 
-        final Stopwatch stopwatch = Stopwatch.createStarted();
+        long startTime = System.currentTimeMillis();
 
         // Configuring pool
         this.cfg = new JedisPoolConfig();
@@ -78,9 +76,8 @@ public class RedisDB {
         // Test connection
         try (Jedis j = this.pool.getResource()) {
             if (j.isConnected()) {
-                this.plugin.getLogger().info(plugin.getLang().getMessage("connectionSuccess", stopwatch.elapsed(TimeUnit.MILLISECONDS)));
+                this.plugin.getLogger().info(plugin.getLang().getMessage("connectionSuccess", System.currentTimeMillis() - startTime));
                 this.plugin.getLogger().warning(plugin.getLang().getMessage("authWarning"));
-                stopwatch.stop();
             } else {
                 this.plugin.getLogger().warning(plugin.getLang().getMessage("connectionFail"));
                 Bukkit.getPluginManager().disablePlugin(this.plugin);
