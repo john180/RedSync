@@ -37,7 +37,7 @@ public class RedisDB {
     private String password;
 
 
-    // Contructor
+    // Constructor
     public RedisDB(RedSync plugin, String host, int port, int timeout, int db, String password){
         this.plugin = plugin;
         this.host = host;
@@ -66,6 +66,7 @@ public class RedisDB {
             this.pool = new JedisPool(this.cfg, this.host, this.port, this.timeout, this.password, this.db);
         // Connect without authorization
         } else {
+            this.plugin.getLogger().warning(plugin.getLang().getMessage("authWarning"));
             try {
                 this.pool = new JedisPool(new URI("redis://" + this.host + ":" + this.port + '/' + this.db));
             } catch (URISyntaxException e) {
@@ -77,7 +78,6 @@ public class RedisDB {
         try (Jedis j = this.pool.getResource()) {
             if (j.isConnected()) {
                 this.plugin.getLogger().info(plugin.getLang().getMessage("connectionSuccess", System.currentTimeMillis() - startTime));
-                this.plugin.getLogger().warning(plugin.getLang().getMessage("authWarning"));
             } else {
                 this.plugin.getLogger().warning(plugin.getLang().getMessage("connectionFail"));
                 Bukkit.getPluginManager().disablePlugin(this.plugin);
@@ -103,7 +103,7 @@ public class RedisDB {
     public void savePlayer(Player p){
         try (Jedis j = this.pool.getResource()) {
             final Map<String, String> data = new HashMap<>();
-            synchronized (this.plugin){
+            synchronized (p){
                 data.put(DataKey.INV.value(), Serializer.itemStackArrayToBase64(p.getInventory().getContents()));
                 data.put(DataKey.ARMOR.value(), Serializer.itemStackArrayToBase64(p.getInventory().getArmorContents()));
                 data.put(DataKey.ENDERCHEST.value(), Serializer.itemStackArrayToBase64(p.getEnderChest().getContents()));

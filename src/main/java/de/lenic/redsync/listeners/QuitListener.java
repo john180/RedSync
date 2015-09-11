@@ -27,6 +27,7 @@ public class QuitListener implements Listener {
             @Override
             public void run() {
                 plugin.getRedis().savePlayer(p);
+                plugin.getMessagingManager().sendSavingCompleted(p);
             }
         });
     }

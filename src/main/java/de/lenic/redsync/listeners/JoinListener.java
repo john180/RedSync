@@ -24,13 +24,14 @@ public class JoinListener implements Listener {
         // Lock player
         p.setMetadata(LockListener.lockedMeta, new FixedMetadataValue(this.plugin, true));
 
+        // Unlock player after load delay
         Bukkit.getScheduler().runTaskLaterAsynchronously(this.plugin, new Runnable() {
             @Override
             public void run() {
                 plugin.getRedis().loadPlayer(p);
 
                 // Unlock player
-                synchronized (plugin){
+                synchronized (p){
                     p.removeMetadata(LockListener.lockedMeta, plugin);
                 }
             }

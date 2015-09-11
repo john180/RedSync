@@ -37,4 +37,15 @@ public class RedSyncConfig {
         updateMode = status;
     }
 
+    /* PLUGIN MESSAGING */
+    private static boolean pluginMessaging = false;
+
+    public static boolean isPluginMessaging() {
+        return pluginMessaging;
+    }
+
+    public static void setPluginMessaging(boolean enabled) {
+        pluginMessaging = enabled;
+    }
+
 }

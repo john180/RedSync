@@ -6,6 +6,7 @@ import de.lenic.redsync.listeners.JoinListener;
 import de.lenic.redsync.listeners.LockListener;
 import de.lenic.redsync.listeners.QuitListener;
 import de.lenic.redsync.managers.LangManager;
+import de.lenic.redsync.managers.MessagingManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -22,16 +23,19 @@ public class RedSync extends JavaPlugin {
     private RedisDB db = null;
 
     // Thread pool
-    private ExecutorService executor = Executors.newCachedThreadPool();
+    private final ExecutorService executor = Executors.newCachedThreadPool();
 
     // Metrics
     private Metrics metrics;
 
     // Language manager
-    private LangManager langManager = new LangManager("en");
+    private final LangManager langManager = new LangManager("en");
+
+    // Plugin messaging manager
+    private final MessagingManager messagingManager = new MessagingManager(this);
 
     // API
-    private RedSyncAPI api = new RedSyncAPI(this);
+    private final RedSyncAPI api = new RedSyncAPI(this);
 
 
     // ---------------- [ METHODS ] ---------------- //
@@ -40,6 +44,10 @@ public class RedSync extends JavaPlugin {
         this.loadMetrics();
         this.loadConfig();
         this.registerListeners();
+
+        // Register messaging channels
+        this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+        this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", this.messagingManager);
     }
 
     public void onDisable(){
@@ -72,6 +80,7 @@ public class RedSync extends JavaPlugin {
         this.getConfig().addDefault("Redis.Auth.Password", "");
         this.getConfig().addDefault("Security.Lock-Player", true);
         this.getConfig().addDefault("Security.Load-Delay", 15);
+        this.getConfig().addDefault("Experimental.Plugin-Messaging", false);
         this.getConfig().addDefault("Update-Mode", true);
         this.getConfig().options().copyDefaults(true);
         this.saveConfig();
@@ -80,6 +89,11 @@ public class RedSync extends JavaPlugin {
         RedSyncConfig.setLockPlayer(this.getConfig().getBoolean("Security.Lock-Player"));
         RedSyncConfig.setLoadDelay(this.getConfig().getInt("Security.Load-Delay"));
         RedSyncConfig.setUpdateMode(this.getConfig().getBoolean("Update-Mode"));
+        RedSyncConfig.setPluginMessaging(this.getConfig().getBoolean("Experimental.Plugin-Messaging"));
+
+        // Experimental Feature Warning
+        if(RedSyncConfig.isPluginMessaging())
+            this.getLogger().warning(this.langManager.getMessage("experimentalWarning", "Plugin-Messaging"));
 
         // Disable Update-Mode
         this.getConfig().set("Update-Mode", false);
@@ -118,6 +132,10 @@ public class RedSync extends JavaPlugin {
 
     public LangManager getLang(){
         return this.langManager;
+    }
+
+    public MessagingManager getMessagingManager(){
+        return this.messagingManager;
     }
 
     public RedSyncAPI getAPI(){
