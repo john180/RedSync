@@ -23,12 +23,9 @@ public class QuitListener implements Listener {
             p.getInventory().clear();
 
         // Save player data
-        this.plugin.getExecutor().execute(new Runnable() {
-            @Override
-            public void run() {
-                plugin.getRedis().savePlayer(p);
-                plugin.getMessagingManager().sendSavingCompleted(p);
-            }
+        plugin.getExecutor().execute(() -> {
+            plugin.getRedis().savePlayer(p);
+            plugin.getMessagingManager().sendSavingCompleted(p);
         });
     }
 

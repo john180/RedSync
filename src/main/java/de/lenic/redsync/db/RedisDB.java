@@ -13,6 +13,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -20,7 +21,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class RedisDB {
+public class RedisDB implements Closeable {
 
     // Plugin Instance
     private RedSync plugin;
@@ -49,7 +50,7 @@ public class RedisDB {
 
 
     // Connect to database
-    public void connect(int threads){
+    public void init(int threads){
         this.plugin.getLogger().info("Connecting to Redis database...");
 
         long startTime = System.currentTimeMillis();
@@ -93,7 +94,8 @@ public class RedisDB {
     }
 
     // Close pool
-    public void disconnect(){
+    @Override
+    public void close(){
         if(this.pool != null)
             this.pool.close();
     }
@@ -146,43 +148,40 @@ public class RedisDB {
                 final int slot = Integer.parseInt(data.get(DataKey.SLOT.value()));
 
                 // Apply data
-                plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
-                    @Override
-                    public void run() {
-                        // Inventory
-                        p.getInventory().setContents(inv);
+                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                    // Inventory
+                    p.getInventory().setContents(inv);
 
-                        // Armor
-                        p.getInventory().setArmorContents(armor);
+                    // Armor
+                    p.getInventory().setArmorContents(armor);
 
-                        // Enderchest
-                        p.getEnderChest().setContents(enderchest);
+                    // Enderchest
+                    p.getEnderChest().setContents(enderchest);
 
-                        // Potion effects
-                        for(PotionEffect effect : effects)
-                            p.addPotionEffect(effect);
+                    // Potion effects
+                    for(PotionEffect effect : effects)
+                        p.addPotionEffect(effect);
 
-                        // Level
-                        p.setLevel(level);
+                    // Level
+                    p.setLevel(level);
 
-                        // EXP
-                        p.setExp(exp);
+                    // EXP
+                    p.setExp(exp);
 
-                        // Health
-                        p.setHealth(health);
+                    // Health
+                    p.setHealth(health);
 
-                        // Food
-                        p.setFoodLevel(food);
+                    // Food
+                    p.setFoodLevel(food);
 
-                        // Gamemode
-                        p.setGameMode(gamemode);
+                    // Gamemode
+                    p.setGameMode(gamemode);
 
-                        // Fire ticks
-                        p.setFireTicks(fireticks);
+                    // Fire ticks
+                    p.setFireTicks(fireticks);
 
-                        // Item slot
-                        p.getInventory().setHeldItemSlot(slot);
-                    }
+                    // Item slot
+                    p.getInventory().setHeldItemSlot(slot);
                 });
             } catch (IOException e) {
                 e.printStackTrace();
@@ -192,8 +191,7 @@ public class RedisDB {
 
     // Save all player data
     public void saveAll(Collection<? extends Player> players) {
-        for (Player p : players)
-            savePlayer(p);
+        players.forEach(p -> savePlayer(p));
     }
 
     // Get resource from pool

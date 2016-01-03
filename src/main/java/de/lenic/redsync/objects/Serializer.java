@@ -18,8 +18,8 @@ public class Serializer {
     // Serialize ItemStack array
     public static String itemStackArrayToBase64(ItemStack[] items) throws IllegalStateException {
         try {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            BukkitObjectOutputStream dataOutput = new BukkitObjectOutputStream(outputStream);
+            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            final BukkitObjectOutputStream dataOutput = new BukkitObjectOutputStream(outputStream);
 
             dataOutput.writeInt(items.length);
 
@@ -37,8 +37,8 @@ public class Serializer {
     // Deserialize ItemStack array
     public static ItemStack[] itemStackArrayFromBase64(String data) throws IOException {
         try {
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64Coder.decodeLines(data));
-            BukkitObjectInputStream dataInput = new BukkitObjectInputStream(inputStream);
+            final ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64Coder.decodeLines(data));
+            final BukkitObjectInputStream dataInput = new BukkitObjectInputStream(inputStream);
             ItemStack[] items = new ItemStack[dataInput.readInt()];
 
             for (int i = 0; i < items.length; i++)
@@ -60,7 +60,7 @@ public class Serializer {
 
         final StringBuilder builder = new StringBuilder("");
         for(PotionEffect effect : effects)
-            builder.append(effect.getType().toString() + ':' + effect.getDuration() + ':' + effect.getAmplifier() + ';');
+            builder.append(effect.getType().toString() + ':' + effect.getDuration() + ':' + effect.getAmplifier() + ':' + effect.isAmbient() + ';');
         return builder.toString();
     }
 
@@ -73,8 +73,14 @@ public class Serializer {
         String[] potionData;
         for(String s : serialized.split(";")){
             potionData = s.split(":");
-            if(PotionEffectType.getByName(potionData[0]) != null)
-                effects.add(new PotionEffect(PotionEffectType.getByName(potionData[0]), Integer.parseInt(potionData[1]), Integer.parseInt(potionData[2])));
+            if(PotionEffectType.getByName(potionData[0]) != null){
+                effects.add(new PotionEffect(
+                        PotionEffectType.getByName(potionData[0]),                                  // Type
+                        Integer.parseInt(potionData[1]),                                            // Duration
+                        Integer.parseInt(potionData[2]),                                            // Amplifier
+                        potionData.length == 4 ? Boolean.parseBoolean(potionData[3]) : false        // Ambient
+                ));
+            }
         }
         return effects;
     }

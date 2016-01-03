@@ -36,7 +36,7 @@ public class MessagingManager implements PluginMessageListener {
             final ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("Forward");
             out.writeUTF("ONLINE");
-            out.writeUTF(this.SAVING_COMPLETE);
+            out.writeUTF(SAVING_COMPLETE);
 
             final ByteArrayOutputStream msgbytes = new ByteArrayOutputStream();
             final DataOutputStream msgout = new DataOutputStream(msgbytes);
@@ -60,7 +60,8 @@ public class MessagingManager implements PluginMessageListener {
 
         final ByteArrayDataInput in = ByteStreams.newDataInput(message);
         final String subchannel = in.readUTF();
-        if(subchannel.equals(this.SAVING_COMPLETE)) {
+
+        if(subchannel.equals(SAVING_COMPLETE)) {
             final UUID uuid = UUID.fromString(in.readUTF());
             final Player online = this.plugin.getServer().getPlayer(uuid);
 
