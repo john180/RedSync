@@ -112,6 +112,7 @@ public class RedisDB implements Closeable {
                 data.put(DataKey.POTION.value(), Serializer.potionEffectsToString(p.getActivePotionEffects()));
                 data.put(DataKey.LEVEL.value(), String.valueOf(p.getLevel()));
                 data.put(DataKey.EXP.value(), String.valueOf(p.getExp()));
+                data.put(DataKey.MAX_HEALTH.value(), String.valueOf(p.getMaxHealth()));
                 data.put(DataKey.HEALTH.value(), String.valueOf(p.getHealth()));
                 data.put(DataKey.HUNGER.value(), String.valueOf(p.getFoodLevel()));
                 data.put(DataKey.GAMEMODE.value(), p.getGameMode().name());
@@ -141,6 +142,7 @@ public class RedisDB implements Closeable {
                 final Collection<PotionEffect> effects = Serializer.potionEffectsFromString(data.get(DataKey.POTION.value()));
                 final int level = Integer.parseInt(data.get(DataKey.LEVEL.value()));
                 final float exp = Float.parseFloat(data.get(DataKey.EXP.value()));
+                final double maxHealth = Double.parseDouble(data.get(DataKey.MAX_HEALTH.value()));
                 final double health = Double.parseDouble(data.get(DataKey.HEALTH.value()));
                 final int food = Integer.parseInt(data.get(DataKey.HUNGER.value()));
                 final GameMode gamemode = GameMode.valueOf(data.get(DataKey.GAMEMODE.value()));
@@ -167,6 +169,9 @@ public class RedisDB implements Closeable {
 
                     // EXP
                     p.setExp(exp);
+
+                    // Max Health
+                    p.setMaxHealth(maxHealth);
 
                     // Health
                     p.setHealth(health);

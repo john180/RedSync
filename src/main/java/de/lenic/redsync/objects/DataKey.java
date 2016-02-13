@@ -8,6 +8,7 @@ public enum DataKey {
     POTION("POTION"),
     LEVEL("LEVEL"),
     EXP("EXP"),
+    MAX_HEALTH("MAX_HEALTH"),
     HEALTH("HEALTH"),
     HUNGER("HUNGER"),
     GAMEMODE("GAMEMODE"),
