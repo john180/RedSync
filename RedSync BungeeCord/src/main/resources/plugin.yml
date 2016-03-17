@@ -1,0 +1,5 @@
+name: RedSync-BungeeCord
+author: leNic
+version: 1.0.0
+
+main: de.lenic.redsync.RedSyncBungee

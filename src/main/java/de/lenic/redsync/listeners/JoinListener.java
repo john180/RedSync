@@ -1,13 +1,16 @@
 package de.lenic.redsync.listeners;
 
 import de.lenic.redsync.RedSync;
-import de.lenic.redsync.RedSyncConfig;
+import de.lenic.redsync.objects.PlayerData;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.metadata.FixedMetadataValue;
+
+import java.util.Optional;
 
 public class JoinListener implements Listener {
 
@@ -18,19 +21,31 @@ public class JoinListener implements Listener {
     }
 
     @EventHandler
+    public void onLogin(PlayerLoginEvent e) {
+        e.getPlayer().setMetadata(RedSync.LOCK_KEY, new FixedMetadataValue(plugin, true));
+
+        // Unlock player automatically after 30 seconds
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if(e.getPlayer() != null)
+                e.getPlayer().removeMetadata(RedSync.LOCK_KEY, plugin);
+        }, 600L);
+    }
+
+    @EventHandler
     public void onJoin(PlayerJoinEvent e){
-        final Player p = e.getPlayer();
+        final Player player = e.getPlayer();
+        final Optional<PlayerData> data = plugin.getPlayerDataProvider().getData(player.getUniqueId());
 
-        // Lock player
-        p.setMetadata(LockListener.lockedMeta, new FixedMetadataValue(this.plugin, true));
+        // Data not present
+        if(!data.isPresent())
+            return;
 
-        // Unlock player after load delay
-        Bukkit.getScheduler().runTaskLaterAsynchronously(this.plugin, () -> {
-            plugin.getRedis().loadPlayer(p);
+        // Apply data to player if not empty (empty means player has joined the network)
+        if(!data.get().isEmpty())
+            data.get().apply(player);
 
-            // Unlock player
-            Bukkit.getScheduler().runTask(plugin, () -> p.removeMetadata(LockListener.lockedMeta, plugin) );
-        }, RedSyncConfig.getLoadDelay());
+        plugin.getPlayerDataProvider().removeData(player.getUniqueId());
+        player.removeMetadata(RedSync.LOCK_KEY, plugin);
     }
 
 }

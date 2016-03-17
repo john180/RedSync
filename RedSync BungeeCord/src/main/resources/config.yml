@@ -1,0 +1,14 @@
+Redis:
+  Host: 127.0.0.1
+  Port: 6379
+  DB-Index: 0
+  Timeout: 60000
+  Connections: 2
+  Channel: RS_CITYBUILD
+  Auth:
+    Enabled: false
+    Password: password
+  Connection-Validation:
+    Create: true
+    Return: true
+Config-Version: 3

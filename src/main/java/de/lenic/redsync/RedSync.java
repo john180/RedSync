@@ -1,15 +1,18 @@
 package de.lenic.redsync;
 
-import de.lenic.redsync.api.RedSyncAPI;
-import de.lenic.redsync.db.RedisDB;
+import de.lenic.redsync.db.RedisPubSub;
 import de.lenic.redsync.listeners.JoinListener;
 import de.lenic.redsync.listeners.LockListener;
 import de.lenic.redsync.listeners.QuitListener;
+import de.lenic.redsync.listeners.RedisMessageListener;
 import de.lenic.redsync.managers.LangManager;
-import de.lenic.redsync.managers.MessagingManager;
+import de.lenic.redsync.managers.PlayerDataProvider;
+import de.lenic.redsync.objects.PlayerData;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.mcstats.Metrics;
+import redis.clients.jedis.JedisPoolConfig;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -17,8 +20,15 @@ import java.util.concurrent.Executors;
 
 public class RedSync extends JavaPlugin {
 
+    // Constants
+    public static final String LOCK_KEY = "REDSYNC_LOCK";
+
+
+    // PlayerData provider
+    private PlayerDataProvider playerDataProvider;
+
     // Redis database
-    private RedisDB db = null;
+    private RedisPubSub redis = null;
 
     // Thread pool
     private final ExecutorService executor = Executors.newCachedThreadPool();
@@ -29,31 +39,31 @@ public class RedSync extends JavaPlugin {
     // Language manager
     private LangManager langManager;
 
-    // Plugin messaging manager
-    private final MessagingManager messagingManager = new MessagingManager(this);
-
-    // API
-    private final RedSyncAPI api = new RedSyncAPI(this);
-
 
     // ---------------- [ DEFAULT METHODS ] ---------------- //
 
     @Override
     public void onEnable(){
-        this.loadMetrics();
-        this.loadConfig();
-        this.registerListeners();
-
-        // Register messaging channels
-        this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
-        this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", this.messagingManager);
+        loadMetrics();
+        loadConfig();
+        initRedis();
+        playerDataProvider = new PlayerDataProvider();
+        registerListeners();
     }
 
     @Override
     public void onDisable(){
-        this.getLogger().info(this.getLang().getMessage("savingPlayers", Bukkit.getOnlinePlayers().size()));
-        db.saveAll(Bukkit.getOnlinePlayers());
-        db.close();
+        getLogger().info(this.getLang().getMessage("savingPlayers", Bukkit.getOnlinePlayers().size()));
+        try {
+            if(redis != null) {
+                for(Player player : Bukkit.getOnlinePlayers()) {
+                    redis.saveData(player.getUniqueId().toString(), new PlayerData(player).toJsonString());
+                }
+                redis.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -61,11 +71,10 @@ public class RedSync extends JavaPlugin {
 
     // Register listeners
     private void registerListeners(){
-        if(RedSyncConfig.getLockPlayer())
-            this.getServer().getPluginManager().registerEvents(new LockListener(), this);
-
-        this.getServer().getPluginManager().registerEvents(new JoinListener(this), this);
-        this.getServer().getPluginManager().registerEvents(new QuitListener(this), this);
+        getServer().getPluginManager().registerEvents(new LockListener(), this);
+        getServer().getPluginManager().registerEvents(new JoinListener(this), this);
+        getServer().getPluginManager().registerEvents(new QuitListener(this), this);
+        getServer().getPluginManager().registerEvents(new RedisMessageListener(this), this);
     }
 
     // Load config
@@ -75,14 +84,17 @@ public class RedSync extends JavaPlugin {
         getConfig().addDefault("Redis.DB-Index", 0);
         getConfig().addDefault("Redis.Timeout", 60000);
         getConfig().addDefault("Redis.Connections", 4);
+        getConfig().addDefault("Redis.Channel", "REDSYNC");
         getConfig().addDefault("Redis.Auth.Enabled", true);
         getConfig().addDefault("Redis.Auth.Password", "");
+        getConfig().addDefault("Redis.Connection-Validation.Create", true);
+        getConfig().addDefault("Redis.Connection-Validation.Borrow", true);
+        getConfig().addDefault("Redis.Connection-Validation.Return", true);
         getConfig().addDefault("Security.Lock-Player", true);
         getConfig().addDefault("Security.Load-Delay", 15);
-        getConfig().addDefault("Experimental.Plugin-Messaging", false);
         getConfig().addDefault("Language", "en");
         getConfig().addDefault("Update-Mode", true);
-        getConfig().addDefault("Config-Version", 2);
+        getConfig().addDefault("Config-Version", 3);
         getConfig().options().copyDefaults(true);
         saveConfig();
 
@@ -93,35 +105,44 @@ public class RedSync extends JavaPlugin {
             default: langManager = new LangManager("en");
         }
 
-        // Load settings
-        RedSyncConfig.setLockPlayer(this.getConfig().getBoolean("Security.Lock-Player"));
-        RedSyncConfig.setLoadDelay(this.getConfig().getInt("Security.Load-Delay"));
-        RedSyncConfig.setUpdateMode(this.getConfig().getBoolean("Update-Mode"));
-        RedSyncConfig.setPluginMessaging(this.getConfig().getBoolean("Experimental.Plugin-Messaging"));
-
-        // Experimental Feature Warning
-        if(RedSyncConfig.isPluginMessaging())
-            this.getLogger().warning(this.langManager.getMessage("experimentalWarning", "Plugin-Messaging"));
-
         // Disable Update-Mode
-        this.getConfig().set("Update-Mode", false);
-        this.saveConfig();
+        getConfig().set("Update-Mode", false);
+        saveConfig();
+    }
+
+    private void initRedis() {
+        // Auth warning
+        if(!getConfig().getBoolean("Redis.Auth.Enabled"))
+            getLogger().warning(getLang().getMessage("authWarning"));
 
         // Database
-        if(this.getConfig().getBoolean("Redis.Auth.Enabled")){
-            db = new RedisDB(this, this.getConfig().getString("Redis.Host"), this.getConfig().getInt("Redis.Port"), this.getConfig().getInt("Redis.Timeout"), this.getConfig().getInt("Redis.DB-Index"), this.getConfig().getString("Redis.Auth.Password"));
-            db.init(this.getConfig().getInt("Redis.Connections"));
-        } else {
-            db = new RedisDB(this, this.getConfig().getString("Redis.Host"), this.getConfig().getInt("Redis.Port"), this.getConfig().getInt("Redis.Timeout"), this.getConfig().getInt("Redis.DB-Index"), null);
-            db.init(this.getConfig().getInt("Redis.Connections"));
+        try {
+            final JedisPoolConfig poolConfig = new JedisPoolConfig();
+            poolConfig.setMaxTotal(getConfig().getInt("Redis.Connections") + 2);
+            poolConfig.setTestOnCreate(getConfig().getBoolean("Redis.Connection-Validation.Create"));
+            poolConfig.setTestOnReturn(getConfig().getBoolean("Redis.Connection-Validation.Return"));
+
+            redis = new RedisPubSub(
+                    poolConfig,
+                    getConfig().getString("Redis.Host"),
+                    getConfig().getInt("Redis.Port"),
+                    getConfig().getInt("Redis.Timeout"),
+                    getConfig().getBoolean("Redis.Auth.Enabled") ? getConfig().getString("Redis.Auth.Password") : null,
+                    getConfig().getInt("Redis.DB-Index"),
+                    getConfig().getString("Redis.Channel")
+            );
+            getLogger().info(getLang().getMessage("connectionSuccess"));
+        } catch (Exception e) {
+            getLogger().warning(getLang().getMessage("connectionFail"));
+            e.printStackTrace();
         }
     }
 
     // Load metrics
     private void loadMetrics(){
         try {
-            this.metrics = new Metrics(this);
-            this.metrics.start();
+            metrics = new Metrics(this);
+            metrics.start();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -130,24 +151,20 @@ public class RedSync extends JavaPlugin {
 
     // ---------------- [ GETTERS ] ---------------- //
 
-    public RedisDB getRedis(){
-        return this.db;
+    public PlayerDataProvider getPlayerDataProvider() {
+        return playerDataProvider;
     }
 
-    public ExecutorService getExecutor(){
-        return this.executor;
+    public RedisPubSub getRedis() {
+        return redis;
     }
 
-    public LangManager getLang(){
-        return this.langManager;
+    public ExecutorService getExecutor() {
+        return executor;
     }
 
-    public MessagingManager getMessagingManager(){
-        return this.messagingManager;
-    }
-
-    public RedSyncAPI getAPI(){
-        return this.api;
+    public LangManager getLang() {
+        return langManager;
     }
 
 }

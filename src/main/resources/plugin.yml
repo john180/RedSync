@@ -1,5 +1,5 @@
 name: RedSync
 author: leNic
-version: ${version}
+version: maven-version-number
 
 main: de.lenic.redsync.RedSync

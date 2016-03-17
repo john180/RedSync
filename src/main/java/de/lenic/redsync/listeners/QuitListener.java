@@ -1,6 +1,7 @@
 package de.lenic.redsync.listeners;
 
 import de.lenic.redsync.RedSync;
+import de.lenic.redsync.objects.PlayerData;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -16,16 +17,29 @@ public class QuitListener implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent e){
-        final Player p = e.getPlayer();
+        final Player player = e.getPlayer();
+
+        // Do not save data if player is locked
+        if(player.hasMetadata(RedSync.LOCK_KEY))
+            return;
 
         // Bugfix: Clear inventory if dead
-        if(p.isDead())
-            p.getInventory().clear();
+        if(player.isDead())
+            player.getInventory().clear();
+
+        final PlayerData data = new PlayerData(player);
 
         // Save player data
         plugin.getExecutor().execute(() -> {
-            plugin.getRedis().savePlayer(p);
-            plugin.getMessagingManager().sendSavingCompleted(p);
+            try {
+                final String json = data.toJsonString();
+
+                // Publish data
+                plugin.getRedis().publish(json);
+                plugin.getRedis().saveData(data.getOwner().toString(), json);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         });
     }
 
