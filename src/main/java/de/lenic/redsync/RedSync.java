@@ -49,12 +49,16 @@ public class RedSync extends JavaPlugin {
         initRedis();
         playerDataProvider = new PlayerDataProvider();
         registerListeners();
+        playerDataProvider.startSaveTask(this);
     }
 
     @Override
     public void onDisable(){
         getLogger().info(this.getLang().getMessage("savingPlayers", Bukkit.getOnlinePlayers().size()));
         try {
+            if(playerDataProvider != null)
+                playerDataProvider.close();
+
             if(redis != null) {
                 for(Player player : Bukkit.getOnlinePlayers()) {
                     redis.saveData(player.getUniqueId().toString(), new PlayerData(player).toJsonString());
@@ -91,7 +95,7 @@ public class RedSync extends JavaPlugin {
         getConfig().addDefault("Redis.Connection-Validation.Borrow", true);
         getConfig().addDefault("Redis.Connection-Validation.Return", true);
         getConfig().addDefault("Security.Lock-Player", true);
-        getConfig().addDefault("Security.Load-Delay", 15);
+        getConfig().addDefault("Security.Save-Interval", 5);
         getConfig().addDefault("Language", "en");
         getConfig().addDefault("Update-Mode", true);
         getConfig().addDefault("Config-Version", 3);

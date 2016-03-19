@@ -2,6 +2,7 @@ package de.lenic.redsync;
 
 import de.lenic.redsync.db.RedisPubSub;
 import de.lenic.redsync.listeners.ConnectListener;
+import de.lenic.redsync.listeners.ServerSwitchListener;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
@@ -87,6 +88,7 @@ public class RedSyncBungee extends Plugin {
 
     private void registerListeners() {
         getProxy().getPluginManager().registerListener(this, new ConnectListener(this));
+        getProxy().getPluginManager().registerListener(this, new ServerSwitchListener(this));
     }
 
 

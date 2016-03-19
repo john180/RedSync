@@ -11,4 +11,6 @@ Redis:
   Connection-Validation:
     Create: true
     Return: true
+Excluded-Servers:
+- lobby
 Config-Version: 3

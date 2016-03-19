@@ -8,6 +8,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Map;
+import java.util.Optional;
 
 public class RedisPubSub implements Closeable {
 
@@ -52,16 +54,25 @@ public class RedisPubSub implements Closeable {
         if(publisherJedis != null)
             publisherJedis.close();
 
-        if(subscriberJedis != null)
-            subscriberJedis.close();
-
         if(subsriberThread != null)
             subsriberThread.interrupt();
+
+        if(subscriberJedis != null)
+            subscriberJedis.close();
 
         if(pool != null)
             pool.close();
     }
 
+
+    public Optional<String> getData(String key) {
+        try (Jedis jedis = pool.getResource()) {
+            return Optional.ofNullable(jedis.get(key));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return Optional.empty();
+        }
+    }
 
     public void publish(String message) {
         publisherJedis.publish(channel, message);
@@ -70,6 +81,14 @@ public class RedisPubSub implements Closeable {
     public void saveData(String key, String value) {
         try (Jedis jedis = pool.getResource()) {
             jedis.set(key, value);
+        }
+    }
+
+    public void saveAllData(Map<String, String> data) {
+        try (Jedis jedis = pool.getResource()) {
+            data.entrySet().forEach(entry -> {
+                jedis.set(entry.getKey(), entry.getValue());
+            });
         }
     }
 
