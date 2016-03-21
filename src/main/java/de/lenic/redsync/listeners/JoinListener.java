@@ -26,7 +26,7 @@ public class JoinListener implements Listener {
 
         // Unlock player automatically after 30 seconds
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            if(e.getPlayer() == null)
+            if(e.getPlayer() == null || e.getPlayer().hasMetadata(RedSync.LOCK_KEY))
                 return;
 
             final Optional<String> data = plugin.getRedis().getData(e.getPlayer().getUniqueId().toString());
