@@ -93,8 +93,6 @@ public class RedSync extends JavaPlugin {
         getConfig().addDefault("Redis.Connection-Validation.Create", true);
         getConfig().addDefault("Redis.Connection-Validation.Borrow", true);
         getConfig().addDefault("Redis.Connection-Validation.Return", true);
-        getConfig().addDefault("Security.Lock-Player", true);
-        getConfig().addDefault("Security.Save-Interval", 5);
         getConfig().addDefault("Language", "en");
         getConfig().addDefault("Update-Mode", true);
         getConfig().addDefault("Config-Version", 3);

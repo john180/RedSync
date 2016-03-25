@@ -4,7 +4,7 @@ Redis:
   DB-Index: 0
   Timeout: 60000
   Connections: 2
-  Channel: RS_CITYBUILD
+  Channel: REDSYNC
   Auth:
     Enabled: false
     Password: password

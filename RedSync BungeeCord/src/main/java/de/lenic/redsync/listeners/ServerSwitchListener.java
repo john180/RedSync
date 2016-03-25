@@ -29,12 +29,16 @@ public class ServerSwitchListener implements Listener {
             return;
 
         final Optional<String> data = plugin.getRedis().getData(e.getPlayer().getUniqueId().toString());
+        String message;
 
-        // Data is not present
-        if(!data.isPresent())
-            return;
+        // No saved data present
+        if(data.isPresent())
+            message = data.get();
+        else
+            message = "{\"owner\":\"" + e.getPlayer().getUniqueId().toString() + "\",\"isEmpty\":true}";
 
-        plugin.getRedis().publish(data.get());
+        // Publish data
+        plugin.getRedis().publish(message);
     }
 
 }
