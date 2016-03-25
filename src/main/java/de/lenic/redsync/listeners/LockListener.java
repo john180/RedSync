@@ -8,6 +8,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 
@@ -46,6 +47,12 @@ public class LockListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onInventoryClick(InventoryClickEvent e) {
         if(e.getWhoClicked().hasMetadata(RedSync.LOCK_KEY))
+            e.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onInteract(PlayerInteractEvent e) {
+        if(e.getPlayer().hasMetadata(RedSync.LOCK_KEY))
             e.setCancelled(true);
     }
 

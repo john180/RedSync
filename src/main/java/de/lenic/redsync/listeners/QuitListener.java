@@ -19,6 +19,9 @@ public class QuitListener implements Listener {
     public void onQuit(PlayerQuitEvent e){
         final Player player = e.getPlayer();
 
+        // Remove data from cache
+        plugin.getPlayerDataProvider().removeData(player.getUniqueId());
+
         // Do not save data if player is locked
         if(player.hasMetadata(RedSync.LOCK_KEY))
             return;

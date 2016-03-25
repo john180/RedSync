@@ -20,7 +20,6 @@ public class RedisPubSub implements Closeable {
     private Thread subsriberThread;
     private Jedis subscriberJedis;
     private RSSubscriber subscriber;
-    private Jedis publisherJedis;
 
 
     // Constructor
@@ -45,15 +44,11 @@ public class RedisPubSub implements Closeable {
         subsriberThread = new Thread(() -> subscriberJedis.subscribe(subscriber, channel) );
         subsriberThread.setName("RedSync Subscriber Thread");
         subsriberThread.start();
-        publisherJedis = pool.getResource();
     }
 
 
     @Override
     public void close() throws IOException {
-        if(publisherJedis != null)
-            publisherJedis.close();
-
         if(subsriberThread != null)
             subsriberThread.interrupt();
 
@@ -75,7 +70,9 @@ public class RedisPubSub implements Closeable {
     }
 
     public void publish(String message) {
-        publisherJedis.publish(channel, message);
+        try (Jedis jedis = pool.getResource()) {
+            jedis.publish(channel, message);
+        }
     }
 
     public void saveData(String key, String value) {

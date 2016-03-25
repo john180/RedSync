@@ -15,7 +15,6 @@ public class RedisPubSub implements Closeable {
     private String channel;
     private JedisPoolConfig poolConfig;
     private JedisPool pool;
-    private Jedis publisherJedis;
 
 
     // Constructor
@@ -34,23 +33,20 @@ public class RedisPubSub implements Closeable {
             // Connect without authorization
             this.pool = new JedisPool(poolConfig, host, port, timeout, password, database);
         }
-
-        publisherJedis = pool.getResource();
     }
 
 
     @Override
     public void close() throws IOException {
-        if(publisherJedis != null)
-            publisherJedis.close();
-
         if(pool != null)
             pool.close();
     }
 
 
     public void publish(String message) {
-        publisherJedis.publish(channel, message);
+        try (Jedis jedis = pool.getResource()) {
+            jedis.publish(channel, message);
+        }
     }
 
     public void saveData(String key, String value) {

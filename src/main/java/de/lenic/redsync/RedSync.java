@@ -44,7 +44,6 @@ public class RedSync extends JavaPlugin {
 
     @Override
     public void onEnable(){
-        loadMetrics();
         loadConfig();
         initRedis();
         playerDataProvider = new PlayerDataProvider();
@@ -138,16 +137,6 @@ public class RedSync extends JavaPlugin {
             getLogger().info(getLang().getMessage("connectionSuccess"));
         } catch (Exception e) {
             getLogger().warning(getLang().getMessage("connectionFail"));
-            e.printStackTrace();
-        }
-    }
-
-    // Load metrics
-    private void loadMetrics(){
-        try {
-            metrics = new Metrics(this);
-            metrics.start();
-        } catch (IOException e) {
             e.printStackTrace();
         }
     }
