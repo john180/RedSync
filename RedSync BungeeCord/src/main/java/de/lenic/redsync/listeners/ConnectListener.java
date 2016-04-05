@@ -18,6 +18,15 @@ public class ConnectListener implements Listener {
     }
 
 
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onLogin(LoginEvent e) {
+        if(plugin.getProxy().getPlayer(e.getConnection().getUniqueId()) != null) {
+            e.setCancelReason("You are already connected to this server!");
+            e.setCancelled(true);
+            return;
+        }
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onConnect(LoginEvent e) {
         if(e.isCancelled())

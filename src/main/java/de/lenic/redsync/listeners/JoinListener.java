@@ -21,7 +21,8 @@ public class JoinListener implements Listener {
 
     @EventHandler
     public void onLogin(PlayerLoginEvent e) {
-        e.getPlayer().setMetadata(RedSync.LOCK_KEY, new FixedMetadataValue(plugin, true));
+        if(plugin.getConfig().getBoolean("Security.Lock-Player"))
+            e.getPlayer().setMetadata(RedSync.LOCK_KEY, new FixedMetadataValue(plugin, true));
     }
 
     @EventHandler

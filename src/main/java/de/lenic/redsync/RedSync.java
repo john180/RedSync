@@ -11,7 +11,6 @@ import de.lenic.redsync.objects.PlayerData;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.mcstats.Metrics;
 import redis.clients.jedis.JedisPoolConfig;
 
 import java.io.IOException;
@@ -33,9 +32,6 @@ public class RedSync extends JavaPlugin {
     // Thread pool
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
-    // Metrics
-    private Metrics metrics;
-
     // Language manager
     private LangManager langManager;
 
@@ -53,12 +49,12 @@ public class RedSync extends JavaPlugin {
 
     @Override
     public void onDisable(){
-        getLogger().info(this.getLang().getMessage("savingPlayers", Bukkit.getOnlinePlayers().size()));
         try {
             if(playerDataProvider != null)
                 playerDataProvider.close();
 
             if(redis != null) {
+                getLogger().info(this.getLang().getMessage("savingPlayers", Bukkit.getOnlinePlayers().size()));
                 for(Player player : Bukkit.getOnlinePlayers()) {
                     redis.saveData(player.getUniqueId().toString(), new PlayerData(player).toJsonString());
                 }
@@ -74,7 +70,7 @@ public class RedSync extends JavaPlugin {
 
     // Register listeners
     private void registerListeners(){
-        getServer().getPluginManager().registerEvents(new LockListener(), this);
+        getServer().getPluginManager().registerEvents(new LockListener(this), this);
         getServer().getPluginManager().registerEvents(new JoinListener(this), this);
         getServer().getPluginManager().registerEvents(new QuitListener(this), this);
         getServer().getPluginManager().registerEvents(new RedisMessageListener(this), this);
@@ -93,6 +89,8 @@ public class RedSync extends JavaPlugin {
         getConfig().addDefault("Redis.Connection-Validation.Create", true);
         getConfig().addDefault("Redis.Connection-Validation.Borrow", true);
         getConfig().addDefault("Redis.Connection-Validation.Return", true);
+        getConfig().addDefault("Security.Lock-Player", true);
+        getConfig().addDefault("Security.Save-Interval", 5);
         getConfig().addDefault("Language", "en");
         getConfig().addDefault("Update-Mode", true);
         getConfig().addDefault("Config-Version", 3);
@@ -119,7 +117,7 @@ public class RedSync extends JavaPlugin {
         // Database
         try {
             final JedisPoolConfig poolConfig = new JedisPoolConfig();
-            poolConfig.setMaxTotal(getConfig().getInt("Redis.Connections") + 2);
+            poolConfig.setMaxTotal(getConfig().getInt("Redis.Connections") + 3);
             poolConfig.setTestOnCreate(getConfig().getBoolean("Redis.Connection-Validation.Create"));
             poolConfig.setTestOnReturn(getConfig().getBoolean("Redis.Connection-Validation.Return"));
 

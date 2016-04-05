@@ -49,11 +49,13 @@ public class RedisPubSub implements Closeable {
 
     @Override
     public void close() throws IOException {
+        if(subscriberJedis != null) {
+            subscriber.unsubscribe();
+            subscriberJedis.close();
+        }
+
         if(subsriberThread != null)
             subsriberThread.interrupt();
-
-        if(subscriberJedis != null)
-            subscriberJedis.close();
 
         if(pool != null)
             pool.close();

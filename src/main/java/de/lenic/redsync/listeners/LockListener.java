@@ -14,10 +14,20 @@ import org.bukkit.event.player.PlayerPickupItemEvent;
 
 public class LockListener implements Listener {
 
+    private RedSync plugin;
+
+    // Constructor
+    public LockListener(RedSync plugin) {
+        this.plugin = plugin;
+    }
+
+
     @EventHandler(priority = EventPriority.LOWEST)
     public void onMove(PlayerMoveEvent e) {
-        if(e.getPlayer().hasMetadata(RedSync.LOCK_KEY))
+        if(e.getPlayer().hasMetadata(RedSync.LOCK_KEY)) {
             e.setCancelled(true);
+            e.getPlayer().sendMessage(plugin.getLang().getMessage("lockWarning"));
+        }
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

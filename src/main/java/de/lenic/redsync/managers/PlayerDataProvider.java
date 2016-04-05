@@ -42,6 +42,7 @@ public class PlayerDataProvider implements Closeable {
 
     public void startSaveTask(RedSync plugin) {
         saveTaskId = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
+            plugin.getLogger().info(plugin.getLang().getMessage("savingPlayers", Bukkit.getOnlinePlayers().size()));
             Map<String, String> data = new HashMap<>();
 
             PlayerData playerData;

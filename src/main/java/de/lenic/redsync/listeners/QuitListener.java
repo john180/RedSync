@@ -11,9 +11,11 @@ public class QuitListener implements Listener {
 
     // Plugin Instance
     private RedSync plugin;
+
     public QuitListener(RedSync plugin){
         this.plugin = plugin;
     }
+
 
     @EventHandler
     public void onQuit(PlayerQuitEvent e){
@@ -31,12 +33,11 @@ public class QuitListener implements Listener {
             player.getInventory().clear();
 
         final PlayerData data = new PlayerData(player);
+        final String json = data.toJsonString();
 
         // Save player data
         plugin.getExecutor().execute(() -> {
             try {
-                final String json = data.toJsonString();
-
                 // Publish data
                 plugin.getRedis().publish(json);
                 plugin.getRedis().saveData(data.getOwner().toString(), json);
